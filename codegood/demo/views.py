@@ -1,9 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.http import HttpResponse
-from .forms import user,login_user
+from .forms import user,login_user,reset_psswrd
 from django.template import loader
 from .models import user_db,admin_db
+import hashlib
 
 # Create your views here.
 
@@ -50,7 +51,7 @@ def register(request):
         password = request.POST['password']
         conf_password = request.POST['confirm_password']
         context['user']=user()
-        if (len(register_as) != 0) and (len(user_nm) != 0) and (len(email) != 0) and (len(password) != 0) and (len(conf_password) != 0):
+        if (register_as != "Select" ) and (len(user_nm) != 0) and (len(email) != 0) and (len(password) != 0) and (len(conf_password) != 0):
             if len(password) == len(conf_password) and password == conf_password:
                 if(validate_password(password)):
                     if(register_as=="user"):
@@ -59,7 +60,8 @@ def register(request):
                             context['error'] = "Username already Exists, enter again"
                             return render(request,"registeration.html",context)
                         except ObjectDoesNotExist:
-                            db = user_db(user_nm = user_nm,password = password, email = email)
+                            hash_password = hashlib.md5(password.encode()).hexdigest()
+                            db = user_db(user_nm = user_nm, password = hash_password, email = email)
                             db.save()
                             return HttpResponse("User Doesn't exist Registering user")
                     else:
@@ -68,7 +70,8 @@ def register(request):
                             context['error'] = "Username already Exists, enter again"
                             return render(request,"registeration.html",context)
                         except ObjectDoesNotExist:
-                            db = admin_db(admin_nm = user_nm,password = password, email = email)
+                            hash_password = hashlib.md5(password.encode()).hexdigest()
+                            db = admin_db(admin_nm = user_nm,password = hash_password, email = email)
                             db.save()
                             return HttpResponse("User Doesn't exist Registering user")
                 else:
@@ -83,9 +86,7 @@ def register(request):
             return render(request,"registeration.html",context)
 
 
-
 def login(request):
-    print(request.method)
     if (request.method=="GET"):
         context={}
         context['login']=login_user()
@@ -94,19 +95,66 @@ def login(request):
         login_as = request.POST['login_as']
         user_nm = request.POST['user']
         password = request.POST['password']
-        print(login_as,user_nm,password)
-        if(login_as=="user"):
-            try:
-                db = user_db.objects.get(user_nm = user_nm, password = password)
-            except ObjectDoesNotExist:
-                return HttpResponse("User Doesn't exist to login")
-            return HttpResponse("User login successful")
+        context={}
+        context['login']=login_user()
+        if(login_as != "Select" and len(user_nm) != 0 and len(password) != 0):
+            if login_as == "user":
+                try:
+                    hash_password = hashlib.md5(password.encode()).hexdigest()
+                    db = user_db.objects.get(user_nm = user_nm, password = hash_password)
+                    return HttpResponse("User login successful")
+                except ObjectDoesNotExist:
+                    context['error'] = "User Doesn't exist to login"
+                    return render(request,"loog.html",context)
+            else:
+                try:
+                    hash_password = hashlib.md5(password.encode()).hexdigest()
+                    db = admin_db.objects.get(admin_nm = user_nm, password = hash_password)
+                    return HttpResponse("Admin login successful")
+                except ObjectDoesNotExist:
+                    context['error'] = "User Doesn't exist to login"
+                    return render(request,"loog.html",context)
         else:
-            try:
-                db = admin_db.objects.get(user_nm = user_nm, password = password)
-            except ObjectDoesNotExist:
-                return HttpResponse("User Doesn't exist to login")
-            return HttpResponse("Admin login successful")
+            context['error'] = "Please enter all fields"
+            return render(request,"loog.html",context)
 
 def reset_password(request):
-    return HttpResponse('Password Reset')
+    if (request.method=="GET"):
+        context={}
+        context['reset']=reset_psswrd()
+        return render(request,"passwordReset.html",context)
+    if(request.method=="POST"):
+        login_as = request.POST['login_as']
+        user_nm = request.POST['user']
+        password = request.POST['password']
+        conf_password = request.POST['conf_password']
+        context={}
+        context['reset']=reset_psswrd()
+        if(login_as != "Select" and len(user_nm) != 0 and len(password) != 0 and len(conf_password) != 0):
+            if(len(password) == len(conf_password) and password == conf_password):
+                if(validate_password(password)):
+                    if login_as == "user":
+                        try:
+                            hash_password = hashlib.md5(password.encode()).hexdigest()
+                            db = user_db.objects.filter(user_nm = user_nm).update(password = hash_password)
+                            return HttpResponse("Password Reset successful")
+                        except ObjectDoesNotExist:
+                            context['error'] = "User Doesn't exist to login"
+                            return render(request,"loog.html",context)
+                    else:
+                        try:
+                            hash_password = hashlib.md5(password.encode()).hexdigest()
+                            db = admin_db.objects.filter(admin_nm = user_nm).update(password = hash_password)
+                            return HttpResponse("Password successful")
+                        except ObjectDoesNotExist:
+                            context['error'] = "User Account Doesn't exist to change password"
+                            return render(request,"loog.html",context)
+                else:
+                    context['error'] = "Password should contain minimum of 8 characters, atleast an alphabet, a number and a special character among !@#$%^&*"
+                    return render(request,"loog.html",context)
+            else:
+                context['error'] = "New Password and Confirm Password doesn't match"
+                return render(request,"loog.html",context)
+        else:
+            context['error'] = "Please enter all fields"
+            return render(request,"loog.html",context)

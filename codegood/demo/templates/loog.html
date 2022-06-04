@@ -68,6 +68,9 @@
                 <div class="col-lg-7 px-10 pt-5" style="padding-left:100px;height:550px;">
                     <h1 class="font-weight-bold py-3">Logo</h1>
                     <h4>Sign into your account</h4>
+                    <br>
+                    {{error}}
+                    <br>
                     <form action="#" method="post">
                         {% csrf_token %}    
                         {{login.as_p}}

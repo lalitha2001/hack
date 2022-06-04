@@ -14,3 +14,10 @@ class login_user(forms.Form):
     login_as = forms.ChoiceField(choices=choice)
     user = forms.CharField(max_length=30, widget=forms.TextInput(attrs={"placeholder":"Username"}))
     password = forms.CharField(max_length=30, widget=forms.PasswordInput(attrs={"placeholder":"password"}))
+
+class reset_psswrd(forms.Form):
+    choice = [('Select',''),('admin','Admin'),('user','User')]
+    login_as = forms.ChoiceField(choices=choice)
+    user = forms.CharField(max_length=30, widget=forms.TextInput(attrs={"placeholder":"Username"}))
+    password = forms.CharField(max_length=30, widget=forms.PasswordInput(attrs={"placeholder":"New password"}))
+    conf_password = forms.CharField(max_length=30, widget=forms.PasswordInput(attrs={"placeholder":"Confirm password"}))
