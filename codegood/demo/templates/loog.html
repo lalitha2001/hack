@@ -69,7 +69,11 @@
                     <h1 class="font-weight-bold py-3">Logo</h1>
                     <h4>Sign into your account</h4>
                     <br>
-                    {{error}}
+                    {{error}}<br>
+                    {{role_error}}<br>
+                    {{user_error}}<br>
+                    {{pass_error}}<br>
+                    {{input_error}}
                     <br>
                     <form action="#" method="post">
                         {% csrf_token %}    

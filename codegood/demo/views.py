@@ -10,7 +10,8 @@ import hashlib
 
 def validate_password(password):
     special_characters = ['!','@','#','$','%','^','&','*']
-    if(len(password)>=8):
+    l=len(password)
+    if(l >=8 and  l<=20):
         num_count = 0
         upper_count = 0
         lower_count = 0
@@ -75,15 +76,23 @@ def register(request):
                             db.save()
                             return HttpResponse("User Doesn't exist Registering user")
                 else:
-                    context['pass_error'] = "Password should contain minimum of 8 characters, atleast an alphabet, a number and a special character among !@#$%^&*"
+                    context['pass_error'] = "Password should contain minimum of 8 characters, maximum of 20 characters, atleast a lower case an an upper case alphabets, a number and a special character among !@#$%^&*, spaces not allowed"
                     return render(request,"registeration.html",context)
 
             else:
                 context['pass_error'] = "Password and Confirm Password doesn't match"
                 return render(request,"registeration.html",context)
-        else:
-            context['input_error'] = "Please enter all fields"
-            return render(request,"registeration.html",context)
+        if (register_as == "Select" ):
+            context['role_error'] = "Select Role as either Teacher or Student to proceed"
+        if (len(user_nm) == 0):
+            context['user_error'] = "User name cannot be empty"
+        if (len(email) == 0):
+            context['email_error'] = "Email address cannot be empty"
+        if (len(password) == 0):
+            context['pass_error'] = "Password cannot be empty"
+        if (len(conf_password) == 0):
+            context['conf_pass_error'] = "Confirm Password cannot be empty"
+        return render(request,"registeration.html",context)
 
 
 def login(request):
@@ -104,7 +113,7 @@ def login(request):
                     db = user_db.objects.get(user_nm = user_nm, password = hash_password)
                     return HttpResponse("User login successful")
                 except ObjectDoesNotExist:
-                    context['error'] = "User Doesn't exist to login"
+                    context['error'] = "Invalid Credentials"
                     return render(request,"loog.html",context)
             else:
                 try:
@@ -112,11 +121,15 @@ def login(request):
                     db = admin_db.objects.get(admin_nm = user_nm, password = hash_password)
                     return HttpResponse("Admin login successful")
                 except ObjectDoesNotExist:
-                    context['error'] = "User Doesn't exist to login"
+                    context['error'] = "Invalid Credentials"
                     return render(request,"loog.html",context)
-        else:
-            context['error'] = "Please enter all fields"
-            return render(request,"loog.html",context)
+        if (login_as == "Select" ):
+            context['role_error'] = "Select Role as either Teacher or Student to proceed"
+        if (len(user_nm) == 0):
+            context['user_error'] = "User name cannot be empty"
+        if (len(password) == 0):
+            context['pass_error'] = "Password cannot be empty"
+        return render(request,"registeration.html",context)
 
 def reset_password(request):
     if (request.method=="GET"):
@@ -124,37 +137,43 @@ def reset_password(request):
         context['reset']=reset_psswrd()
         return render(request,"passwordReset.html",context)
     if(request.method=="POST"):
-        login_as = request.POST['login_as']
+        role = request.POST['role']
         user_nm = request.POST['user']
         password = request.POST['password']
         conf_password = request.POST['conf_password']
         context={}
         context['reset']=reset_psswrd()
-        if(login_as != "Select" and len(user_nm) != 0 and len(password) != 0 and len(conf_password) != 0):
+        if(role != "Select" and len(user_nm) != 0 and len(password) != 0 and len(conf_password) != 0):
             if(len(password) == len(conf_password) and password == conf_password):
                 if(validate_password(password)):
-                    if login_as == "user":
+                    if role == "user":
                         try:
                             hash_password = hashlib.md5(password.encode()).hexdigest()
                             db = user_db.objects.filter(user_nm = user_nm).update(password = hash_password)
                             return HttpResponse("Password Reset successful")
                         except ObjectDoesNotExist:
-                            context['error'] = "User Doesn't exist to login"
+                            context['error'] = "Invalid User to reset password"
                             return render(request,"loog.html",context)
                     else:
                         try:
                             hash_password = hashlib.md5(password.encode()).hexdigest()
                             db = admin_db.objects.filter(admin_nm = user_nm).update(password = hash_password)
-                            return HttpResponse("Password successful")
+                            return HttpResponse("Password Reset successful")
                         except ObjectDoesNotExist:
-                            context['error'] = "User Account Doesn't exist to change password"
+                            context['error'] = "Invalid User to change password"
                             return render(request,"loog.html",context)
                 else:
-                    context['error'] = "Password should contain minimum of 8 characters, atleast an alphabet, a number and a special character among !@#$%^&*"
-                    return render(request,"loog.html",context)
+                    context['error'] = "Password should contain minimum of 8 characters, maximum of 20 characters, atleast a lowercase and an upper case alphabet, a number and a special character among !@#$%^&*, spaces not allowed"
+                    return render(request,"passwordReset.html",context)
             else:
                 context['error'] = "New Password and Confirm Password doesn't match"
-                return render(request,"loog.html",context)
-        else:
-            context['error'] = "Please enter all fields"
-            return render(request,"loog.html",context)
+                return render(request,"passwordReset.html",context)
+        if (role == "Select" ):
+            context['role_error'] = "Select Role as either Teacher or Student to proceed"
+        if (len(user_nm) == 0):
+            context['user_error'] = "User name cannot be empty"
+        if (len(password) == 0):
+            context['pass_error'] = "Password cannot be empty"
+        if (len(conf_password) == 0):
+            context['conf_pass_error'] = "Confirm Password cannot be empty"
+        return render(request,"passwordReset.html",context)
